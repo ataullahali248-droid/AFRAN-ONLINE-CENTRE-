@@ -1,12 +1,10 @@
 {
-  "projectId": "nice-fiber-7bcxw",
-  "appId": "1:23962250570:web:d8984c03e21cda9b15a5b3",
-  "apiKey": "AIzaSyDjycDCFBU5oVLp4BRhIsAeIHGO-_Saua0",
-  "authDomain": "nice-fiber-7bcxw.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-467d47c6-afcd-4f17-976a-933705ffe70a",
-  "storageBucket": "nice-fiber-7bcxw.firebasestorage.app",
-  "messagingSenderId": "23962250570",
-  "measurementId": "",
-  "oAuthClientId": "23962250570-ssrvu00v4ltgtgfj4rlln3ehjulc3j1u.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "projectId": "afran-online-centre",
+  "appId": "1:344673100568:web:3740c24d232e335b55b46d",
+  "apiKey": "AIzaSyBc1eCjn99aU1PBWzJMnY_Hn4KEkY-uRXM",
+  "authDomain": "afran-online-centre.firebaseapp.com",
+  "storageBucket": "afran-online-centre.firebasestorage.app",
+  "messagingSenderId": "344673100568",
+  "measurementId": "G-85WCLQXTFG",
+  "firestoreDatabaseId": "(default)"
 }
