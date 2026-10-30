@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // User Profile Validation
+    function isValidUserProfile(data, uid) {
+      return data.keys().hasAll(['userId', 'name', 'email'])
+        && data.userId == uid
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 150
+        && (!('phone' in data) || (data.phone is string && data.phone.size() <= 20))
+        && (!('address' in data) || (data.address is string && data.address.size() <= 300))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1000))
+        && (!('language' in data) || (data.language in ['bn', 'en']));
+    }
+
+    // Application Validation
+    function isValidApplication(data) {
+      return data.keys().hasAll(['id', 'userId', 'customerName', 'customerPhone', 'serviceId', 'serviceCategory', 'serviceTitle', 'status', 'consentAccepted'])
+        && data.id is string && data.id.size() > 0 && data.id.size() <= 50
+        && data.userId == request.auth.uid
+        && data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100
+        && data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 20
+        && data.serviceId is string && data.serviceId.size() > 0 && data.serviceId.size() <= 50
+        && data.serviceCategory is string && data.serviceCategory.size() > 0 && data.serviceCategory.size() <= 50
+        && data.serviceTitle is string && data.serviceTitle.size() > 0 && data.serviceTitle.size() <= 120
+        && data.status in ['submitted', 'under_review', 'processing', 'completed', 'rejected']
+        && data.consentAccepted == true
+        && (!('bookingType' in data) || data.bookingType in ['standard', 'permanent'])
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 500))
+        && (!('statusNote' in data) || (data.statusNote is string && data.statusNote.size() <= 500))
+        && (!('subService' in data) || (data.subService is string && data.subService.size() <= 120))
+        && (!('whatsappNotificationStatus' in data) || data.whatsappNotificationStatus in ['pending', 'sent', 'not_configured']);
+    }
+
+    // Customer Profiles: strictly owned by the customer
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserProfile(incoming(), userId);
+      allow update: if isOwner(userId) && incoming().userId == userId && isValidUserProfile(incoming(), userId);
+      allow delete: if false;
+    }
+
+    // Citizen Service Applications: customer-only isolation
+    match /applications/{applicationId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() 
+                    && isValidId(applicationId)
+                    && incoming().userId == request.auth.uid
+                    && isValidApplication(incoming());
+      allow update: if isSignedIn()
+                    && isOwner(existing().userId)
+                    && incoming().userId == existing().userId
+                    && incoming().id == existing().id
+                    && isValidApplication(incoming())
+                    && incoming().diff(existing()).affectedKeys().hasOnly(['notes', 'documents', 'updatedAt', 'applicantDetails', 'status', 'whatsappNotificationStatus']);
+      allow delete: if false;
+    }
+
+    // Customer In-App Notifications
+    match /notifications/{notificationId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+  }
+}

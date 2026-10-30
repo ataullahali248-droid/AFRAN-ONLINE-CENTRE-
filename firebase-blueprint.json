@@ -1,0 +1,209 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Customer profile holding Google account details and contact information",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique Firebase Authentication UID of the customer"
+        },
+        "name": {
+          "type": "string",
+          "description": "Customer full name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "Customer Google email address",
+          "maxLength": 150
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Customer profile picture URL",
+          "maxLength": 1000
+        },
+        "phone": {
+          "type": "string",
+          "description": "Customer contact mobile phone number",
+          "maxLength": 20
+        },
+        "address": {
+          "type": "string",
+          "description": "Customer postal address or locality",
+          "maxLength": 300
+        },
+        "language": {
+          "type": "string",
+          "description": "Preferred interface language (bn or en)",
+          "enum": ["bn", "en"]
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the customer profile was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the customer profile was last updated"
+        }
+      },
+      "required": ["userId", "name", "email"]
+    },
+    "Application": {
+      "title": "Application",
+      "description": "Citizen service application submitted by customer to AFRAN ONLINE CENTRE",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique business application ID e.g. AOC-2026-XXXX",
+          "maxLength": 50
+        },
+        "userId": {
+          "type": "string",
+          "description": "Auth UID of the applicant customer"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Name of the customer",
+          "maxLength": 100
+        },
+        "customerEmail": {
+          "type": "string",
+          "description": "Email address of customer",
+          "maxLength": 150
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Customer 10-digit mobile number",
+          "maxLength": 20
+        },
+        "serviceId": {
+          "type": "string",
+          "description": "Identifier of the selected service",
+          "maxLength": 50
+        },
+        "serviceCategory": {
+          "type": "string",
+          "description": "Category such as aadhaar, pan, voter, ration, ayushman, epfo, dl, other",
+          "maxLength": 50
+        },
+        "serviceTitle": {
+          "type": "string",
+          "description": "Readable title of service",
+          "maxLength": 120
+        },
+        "subService": {
+          "type": "string",
+          "description": "Specific sub-action requested",
+          "maxLength": 120
+        },
+        "bookingType": {
+          "type": "string",
+          "description": "Whether this is standard booking or permanent booking",
+          "enum": ["standard", "permanent"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Current processing status of application",
+          "enum": ["submitted", "under_review", "processing", "completed", "rejected"]
+        },
+        "statusNote": {
+          "type": "string",
+          "description": "Remarks or instruction from the centre",
+          "maxLength": 500
+        },
+        "notes": {
+          "type": "string",
+          "description": "Customer notes or remarks",
+          "maxLength": 500
+        },
+        "applicantDetails": {
+          "type": "object",
+          "description": "Custom form field answers supplied by applicant"
+        },
+        "documents": {
+          "type": "array",
+          "description": "List of attached verification documents"
+        },
+        "whatsappNotificationStatus": {
+          "type": "string",
+          "description": "Status of the WhatsApp Business notification dispatch",
+          "enum": ["pending", "sent", "not_configured"]
+        },
+        "consentAccepted": {
+          "type": "boolean",
+          "description": "Customer confirmed accurate information and consent"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Submission ISO timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated ISO timestamp"
+        }
+      },
+      "required": ["id", "userId", "customerName", "customerPhone", "serviceId", "serviceCategory", "serviceTitle", "status", "consentAccepted"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app notification for a customer regarding their application",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique notification ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Auth UID of the recipient"
+        },
+        "applicationId": {
+          "type": "string",
+          "description": "Associated application ID",
+          "maxLength": 50
+        },
+        "title": {
+          "type": "string",
+          "description": "Headline of the notification",
+          "maxLength": 150
+        },
+        "message": {
+          "type": "string",
+          "description": "Notification details",
+          "maxLength": 500
+        },
+        "type": {
+          "type": "string",
+          "description": "Notification kind",
+          "enum": ["status_update", "application_submitted", "system"]
+        },
+        "read": {
+          "type": "boolean",
+          "description": "Whether user marked this notification as read"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["id", "userId", "title", "message", "type", "read"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores customer profile and contact phone number. Read/write strictly by the authenticated customer owner."
+    },
+    "/applications/{applicationId}": {
+      "schema": "Application",
+      "description": "Stores citizen service applications. Read/write strictly restricted to the customer whose userId matches request.auth.uid."
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Stores in-app customer notifications. Accessible only by the owner user."
+    }
+  }
+}

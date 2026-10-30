@@ -1,0 +1,6 @@
+{
+  "name": "AFRAN ONLINE CENTRE — Customer App",
+  "description": "Professional customer-only online service portal for AFRAN ONLINE CENTRE in Farakka, West Bengal. Apply for Aadhaar, PAN, Voter, Ration Card, Ayushman, EPFO, Driving Licence, and citizen services.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
