@@ -24,7 +24,7 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { ServiceItem, ApplicationRecord, AppNotification } from './types';
 
 const MainApp: React.FC = () => {
-  const { user } = useAuth();
+  const { user, authError, clearAuthError } = useAuth();
   const [currentTab, setCurrentTab] = useState<TabType>('home');
   const [selectedServiceForApply, setSelectedServiceForApply] = useState<ServiceItem | null>(null);
   const [selectedApplicationDetail, setSelectedApplicationDetail] = useState<ApplicationRecord | null>(null);
@@ -119,6 +119,26 @@ const MainApp: React.FC = () => {
       <div className="w-full max-w-xl mx-auto min-h-screen bg-slate-50 flex flex-col relative shadow-sm border-x border-slate-200/60">
         {/* Android Top App Bar */}
         <TopBar />
+
+        {authError && (
+          <div className="mx-4 mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start justify-between gap-2 shadow-xs">
+            <div className="flex items-start gap-2">
+              <span className="font-bold shrink-0">⚠️</span>
+              <div>
+                <p className="font-semibold text-rose-900">{authError}</p>
+                <p className="text-[11px] text-rose-700 mt-0.5">
+                  Firebase Console-এ Google Sign-In Provider চালু আছে কি না পরীক্ষা করুন।
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={clearAuthError}
+              className="text-rose-500 hover:text-rose-800 p-1 font-bold text-xs shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Dynamic View Body */}
         <main className="flex-1 px-4 py-4 mb-20 overflow-x-hidden">

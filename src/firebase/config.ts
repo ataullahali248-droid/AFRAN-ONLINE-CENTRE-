@@ -3,6 +3,9 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
+  browserPopupRedirectResolver,
   signOut as firebaseSignOut 
 } from 'firebase/auth';
 import { 
@@ -14,10 +17,17 @@ import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// CRITICAL: The app will break without specifying firestoreDatabaseId as required by the skill
+// CRITICAL: Specifying firestoreDatabaseId is required by Firebase integration
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
+
+// Configure Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 export enum OperationType {
   CREATE = 'create',
@@ -76,18 +86,43 @@ export async function testConnection(): Promise<boolean> {
       console.warn("Firestore client is offline. Verify network connection.");
       return false;
     }
-    // Permissions error or non-existent document is expected on test doc, connection is alive
     return true;
   }
 }
 
-// Google Sign-In with popup
+// Check redirect result on app boot (useful for mobile redirects)
+export async function checkRedirectAuth() {
+  try {
+    const result = await getRedirectResult(auth, browserPopupRedirectResolver);
+    if (result && result.user) {
+      return result.user;
+    }
+  } catch (error) {
+    console.error("Redirect auth error:", error);
+  }
+  return null;
+}
+
+// Google Sign-In with browserPopupRedirectResolver and graceful mobile fallback
 export async function signInWithGoogle() {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
+    // Attempt popup with explicit browser popup resolver
+    const result = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
     return result.user;
   } catch (error: any) {
-    console.error("Google Sign-In failed:", error);
+    console.warn("Popup sign-in warning, checking code:", error.code, error.message);
+    
+    // If popup was blocked or unsupported in current webview/mobile browser, fallback to redirect
+    if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+      try {
+        await signInWithRedirect(auth, googleProvider, browserPopupRedirectResolver);
+        return null;
+      } catch (redirectError) {
+        console.error("Redirect sign-in failed:", redirectError);
+        throw redirectError;
+      }
+    }
+    
     throw error;
   }
 }

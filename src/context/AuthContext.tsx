@@ -5,6 +5,7 @@ import {
   auth, 
   db, 
   signInWithGoogle, 
+  checkRedirectAuth,
   logOut, 
   handleFirestoreError, 
   OperationType,
@@ -16,6 +17,8 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  authError: string | null;
+  clearAuthError: () => void;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
   updatePhone: (phone: string, address?: string) => Promise<void>;
@@ -27,6 +30,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   userProfile: null,
   loading: true,
+  authError: null,
+  clearAuthError: () => {},
   signIn: async () => {},
   signOut: async () => {},
   updatePhone: async () => {},
@@ -38,15 +43,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [promptPhoneModal, setPromptPhoneModal] = useState(false);
 
   useEffect(() => {
     // Run test connection
     testConnection();
 
+    // Check if user just returned from a redirect sign-in flow
+    checkRedirectAuth().catch(console.error);
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        setAuthError(null);
         try {
           const userDocRef = doc(db, 'users', currentUser.uid);
           let userSnap;
@@ -99,12 +109,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
+  const clearAuthError = () => setAuthError(null);
+
   const signIn = async () => {
     try {
       setLoading(true);
+      setAuthError(null);
       await signInWithGoogle();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign-in error:", error);
+      if (error?.code === 'auth/popup-closed-by-user') {
+        // User closed the popup, do not show fatal error
+        setAuthError(null);
+      } else if (error?.code === 'auth/operation-not-allowed') {
+        setAuthError('Firebase Console-এ Google Sign-In Provider চালু (Enable) করতে হবে।');
+      } else if (error?.code === 'auth/unauthorized-domain') {
+        setAuthError('Firebase Console -> Authentication -> Settings -> Authorized Domains-এ বর্তমান ডোমেইন যুক্ত করতে হবে।');
+      } else if (error?.message?.includes('invalid')) {
+        setAuthError('Firebase Auth Handler ত্রুটি: অনুগ্রহ করে নিশ্চিত করুন Firebase Console-এ Google Provider Enable করা আছে এবং Support Email সেট করা হয়েছে।');
+      } else {
+        setAuthError(error?.message || 'সাইন-ইন করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+      }
       throw error;
     } finally {
       setLoading(false);
@@ -116,6 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await logOut();
       setUser(null);
       setUserProfile(null);
+      setAuthError(null);
     } catch (error) {
       console.error("Sign-out error:", error);
       throw error;
@@ -145,6 +171,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user,
       userProfile,
       loading,
+      authError,
+      clearAuthError,
       signIn,
       signOut,
       updatePhone,

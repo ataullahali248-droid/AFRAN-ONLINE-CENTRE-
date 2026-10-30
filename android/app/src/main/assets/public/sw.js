@@ -81,12 +81,12 @@ define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
     "revision": "1872c500de691dce40960bb85481de07"
   }, {
     "url": "index.html",
-    "revision": "775f92611009a9114bc0de12abfb8e2b"
+    "revision": "82dce8ae467df6adad8ea4f34d56e931"
   }, {
-    "url": "assets/index-CSK7n4Qy.js",
+    "url": "assets/index-DbB50p5-.css",
     "revision": null
   }, {
-    "url": "assets/index-3Ec9LSR-.css",
+    "url": "assets/index-CJhukd28.js",
     "revision": null
   }, {
     "url": "icon.svg",
@@ -96,6 +96,8 @@ define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
     "revision": "33d94ababe4ae66fe8d97e79c35049f5"
   }], {});
   workbox.cleanupOutdatedCaches();
-  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html")));
+  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
+    denylist: [/^\/__\/auth/]
+  }));
 
 }));
